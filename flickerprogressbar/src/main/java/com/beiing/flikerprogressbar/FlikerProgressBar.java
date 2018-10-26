@@ -42,8 +42,6 @@ public class FlikerProgressBar extends View {
 
     private Paint textPaint;
 
-    private Paint bgPaint;
-
     private Paint pgPaint;
 
     private String progressText;
@@ -51,11 +49,6 @@ public class FlikerProgressBar extends View {
     private Rect textRect;
 
     private RectF bgRectF;
-
-    /**
-     * 进度条 bitmap ，包含滑块
-     */
-    private Bitmap pgBitmap;
 
     private Canvas pgCanvas;
 
@@ -114,7 +107,6 @@ public class FlikerProgressBar extends View {
 
     private int radius;
 
-    BitmapShader bitmapShader;
 
     public FlikerProgressBar(Context context) {
         this(context, null, 0);
@@ -126,11 +118,11 @@ public class FlikerProgressBar extends View {
 
     public FlikerProgressBar(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        initAttrs(attrs);
+        initAttrs(attrs, defStyleAttr);
     }
 
-    private void initAttrs(AttributeSet attrs) {
-        TypedArray ta = getContext().obtainStyledAttributes(attrs, R.styleable.FlikerProgressBar);
+    private void initAttrs(AttributeSet attrs, int defStyleAttr) {
+        TypedArray ta = getContext().obtainStyledAttributes(attrs, R.styleable.FlikerProgressBar, defStyleAttr, 0);
         try {
             textSize = (int) ta.getDimension(R.styleable.FlikerProgressBar_textSize, getResources().getDimensionPixelSize(R.dimen.button_text_size_default));
             textColor = ta.getColor(R.styleable.FlikerProgressBar_textColor, Color.parseColor("#FFFFFF"));
@@ -147,9 +139,6 @@ public class FlikerProgressBar extends View {
     }
 
     private void init() {
-        bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-        bgPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-
         pgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         pgPaint.setStyle(Paint.Style.FILL);
 
@@ -160,19 +149,34 @@ public class FlikerProgressBar extends View {
         bgRectF = new RectF(0, 0, getMeasuredWidth(), getMeasuredHeight());
 
         if (isStop) {
-            progressColor = stopColor;
+            if (isSelected()) {
+                progressColor = selectedColor;
+            } else {
+                progressColor = stopColor;
+            }
         } else {
             progressColor = loadingColor;
         }
 
-        textTempColor = textLoadingColor;
+        if (isSelected()) {
+            textTempColor = textSelectedColor;
+        } else {
+            textTempColor = textLoadingColor;
+        }
 
-        initPgBimap();
+        initPgBitmap();
     }
 
-    private void initPgBimap() {
-        pgBitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Bitmap.Config.ARGB_8888);
-        pgCanvas = new Canvas(pgBitmap);
+    private void initPgBitmap() {
+        if (pgPaint != null) {
+            /**
+             * 进度条 bitmap ，包含滑块
+             */
+            Bitmap pgBitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+            pgCanvas = new Canvas(pgBitmap);
+            BitmapShader bitmapShader = new BitmapShader(pgBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+            pgPaint.setShader(bitmapShader);
+        }
     }
 
 
@@ -208,7 +212,7 @@ public class FlikerProgressBar extends View {
         }
         setMeasuredDimension(width, height);
 
-        if (pgBitmap == null) {
+        if (pgPaint == null || textPaint == null || textRect == null || bgRectF == null) {
             init();
         }
     }
@@ -231,22 +235,17 @@ public class FlikerProgressBar extends View {
      * 进度
      */
     private void drawProgress(Canvas canvas) {
-        pgPaint.setColor(progressColor);
-
-        float right = (progress / maxProgress) * getMeasuredWidth();
         pgCanvas.save(Canvas.CLIP_SAVE_FLAG);
-        pgCanvas.clipRect(0, 0, right, getMeasuredHeight());
+        pgCanvas.clipRect(0, 0, (progress / maxProgress) * getMeasuredWidth(), getMeasuredHeight());
         pgCanvas.drawColor(progressColor);
         pgCanvas.restore();
 
         pgCanvas.save(Canvas.CLIP_SAVE_FLAG);
-        pgCanvas.clipRect(right, 0, getMeasuredWidth(), getMeasuredHeight());
+        pgCanvas.clipRect((progress / maxProgress) * getMeasuredWidth(), 0, getMeasuredWidth(), getMeasuredHeight());
         pgCanvas.drawColor(bgColor);
         pgCanvas.restore();
 
         //控制显示区域
-        bitmapShader = new BitmapShader(pgBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-        pgPaint.setShader(bitmapShader);
         canvas.drawRoundRect(bgRectF, radius, radius, pgPaint);
     }
 
@@ -288,17 +287,21 @@ public class FlikerProgressBar extends View {
     public void setProgress(float progress) {
         if (progress < maxProgress) {
             this.progress = progress;
+            invalidate();
         } else {
             this.progress = maxProgress;
             finishLoad();
         }
-        invalidate();
     }
 
     public void setStop(boolean stop) {
         isStop = stop;
         if (isStop) {
-            progressColor = stopColor;
+            if (isSelected()) {
+                progressColor = selectedColor;
+            } else {
+                progressColor = stopColor;
+            }
         } else {
             progressColor = loadingColor;
         }
@@ -331,7 +334,7 @@ public class FlikerProgressBar extends View {
         progressColor = loadingColor;
         textTempColor = textLoadingColor;
         progressText = "";
-        initPgBimap();
+        initPgBitmap();
     }
 
     @Override
@@ -345,8 +348,8 @@ public class FlikerProgressBar extends View {
                 progressColor = stopColor;
                 textTempColor = textLoadingColor;
             }
-            invalidate();
         }
+        invalidate();
     }
 
     public float getProgress() {

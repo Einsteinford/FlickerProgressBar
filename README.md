@@ -1,5 +1,7 @@
 # FlickerProgressBar
 
+### 效果图
+![preview](preview.gif)
 
 ### 自定义属性
 
