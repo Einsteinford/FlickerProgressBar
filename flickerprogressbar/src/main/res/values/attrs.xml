@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="FlikerProgressBar">
+        <attr name="textSize" format="dimension" />
+
+        <attr name="textColor" format="color" />
+
+        <attr name="textLoadingColor" format="color" />
+
+        <attr name="textSelectedColor" format="color" />
+
+        <attr name="bgColor" format="color" />
+
+        <attr name="loadingColor" format="color" />
+
+        <attr name="stopColor" format="color" />
+
+        <attr name="SelectedColor" format="color" />
+
+        <attr name="buttonRadius" format="dimension" />
+
+    </declare-styleable>
+
+</resources>
